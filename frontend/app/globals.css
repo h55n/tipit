@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Funnel+Sans:wght@400;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Loops House Design Tokens ─────────────────────────────────────────────── */
+:root {
+  --color-primary:     #0f2c23;
+  --color-primary-70:  #314c41;
+  --color-primary-80:  #17362d;
+  --color-secondary:   #10271d;
+  --color-neutral:     #f8ffe8;
+  --color-surface:     #f8ffe8;
+  --color-on-surface:  #10271d;
+  --color-tertiary:    #e5e7eb;
+  --color-error:       #b42318;
+
+  --font-display: "Funnel Sans", sans-serif;
+  --font-body:    "Funnel Sans", sans-serif;
+  --font-label:   ui-sans-serif, system-ui, sans-serif;
+
+  --radius-full: 9999px;
+  --radius-xl:   24px;
+  --radius-lg:   16px;
+  --radius-md:   8px;
+  --radius-sm:   4px;
+
+  --space-xs: 6px;
+  --space-sm: 20px;
+  --space-md: 40px;
+  --space-lg: 56px;
+  --space-xl: 96px;
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background-color: var(--color-neutral);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────────── */
+.headline-display {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 7vw, 72px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--color-primary);
+}
+
+.headline-lg {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  color: var(--color-primary);
+}
+
+.headline-md {
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: 700;
+  line-height: 38px;
+  letter-spacing: -0.025em;
+  color: var(--color-primary);
+}
+
+.headline-sm {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.body-lg  { font-size: 17px; line-height: 24px; }
+.body-md  { font-size: 15px; line-height: 24px; }
+.body-sm  { font-size: 13px; line-height: 20px; }
+
+.label-sm {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.caption {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-70);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-primary);
+  color: var(--color-neutral);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 16px 28px;
+  height: 48px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-70); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-primary);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  padding: 14px 28px;
+  height: 48px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.btn-secondary:hover { background: var(--color-primary); color: var(--color-neutral); }
+
+/* ── Cards ──────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-tertiary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+/* ── Inputs ─────────────────────────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 24px;
+  border: 1px solid var(--color-tertiary);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.input:focus { border-color: var(--color-primary); }
+.input::placeholder { color: var(--color-primary-70); opacity: 0.6; }
+
+/* ── Chip ───────────────────────────────────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-neutral);
+  border: 1px solid var(--color-tertiary);
+  color: var(--color-on-surface);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+}
+
+.chip-success {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.chip-error {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: var(--color-error);
+}
+
+/* ── Spinner ────────────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-tertiary);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Divider ────────────────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-tertiary);
+}
+
+/* ── Fade-in animation for new tips ────────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.tip-card-enter { animation: fadeSlideIn 0.3s ease both; }

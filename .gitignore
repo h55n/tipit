@@ -1,0 +1,12 @@
+node_modules/
+.agents/
+.claude/
+.env
+frontend/.env.local
+cache/
+artifacts/
+typechain-types/
+coverage/
+coverage.json
+frontend/.next/
+frontend/deployment.json
