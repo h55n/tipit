@@ -6,22 +6,23 @@ import {
   SEPOLIA_CHAIN_ID_HEX,
   SEPOLIA_PARAMS,
   shortenAddress,
+  formatEth,
 } from "../lib/contract";
+import { ethers } from "ethers";
 
-type WalletState =
+export type WalletState =
   | { status: "idle" }
   | { status: "no_metamask" }
   | { status: "connecting" }
   | { status: "wrong_network"; address: string }
   | { status: "switching_network" }
-  | { status: "connected"; address: string; chainId: number };
+  | { status: "connected"; address: string; chainId: number; balance: bigint };
 
 interface Props {
   onConnect: (address: string) => void;
   onDisconnect: () => void;
 }
 
-// Typed ethereum provider
 interface EthereumProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on: (event: string, handler: (data: unknown) => void) => void;
@@ -39,10 +40,31 @@ function getEthereum(): EthereumProvider | null {
   return window.ethereum ?? null;
 }
 
+async function fetchBalance(address: string): Promise<bigint> {
+  try {
+    const eth = getEthereum();
+    if (!eth) return BigInt(0);
+    const hex = (await eth.request({
+      method: "eth_getBalance",
+      params: [address, "latest"],
+    })) as string;
+    return BigInt(hex);
+  } catch {
+    return BigInt(0);
+  }
+}
+
 export default function WalletConnect({ onConnect, onDisconnect }: Props) {
   const [wallet, setWallet] = useState<WalletState>({ status: "idle" });
 
-  // ── Detect existing connection on mount ────────────────────────────────────
+  const updateBalance = useCallback(async (address: string) => {
+    const balance = await fetchBalance(address);
+    setWallet((prev) =>
+      prev.status === "connected" ? { ...prev, balance } : prev
+    );
+  }, []);
+
+  // Detect existing connection on mount
   useEffect(() => {
     const eth = getEthereum();
     if (!eth) { setWallet({ status: "no_metamask" }); return; }
@@ -55,7 +77,8 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
           const chainId = parseInt(chainIdHex, 16);
           const address = accounts[0];
           if (chainId === SEPOLIA_CHAIN_ID) {
-            setWallet({ status: "connected", address, chainId });
+            const balance = await fetchBalance(address);
+            setWallet({ status: "connected", address, chainId, balance });
             onConnect(address);
           } else {
             setWallet({ status: "wrong_network", address });
@@ -65,7 +88,7 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Listen for account / network changes ──────────────────────────────────
+  // Listen for account / network changes
   useEffect(() => {
     const eth = getEthereum();
     if (!eth) return;
@@ -77,9 +100,13 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
         onDisconnect();
       } else {
         setWallet((prev) => {
-          if (prev.status === "connected") return { ...prev, address: accounts[0] };
+          if (prev.status === "connected") {
+            updateBalance(accounts[0]);
+            return { ...prev, address: accounts[0] };
+          }
           return prev;
         });
+        onConnect(accounts[0]);
       }
     };
 
@@ -91,9 +118,13 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
           prev.status === "connected" || prev.status === "wrong_network"
             ? prev.address
             : "";
+        if (!address) return prev;
         if (chainId === SEPOLIA_CHAIN_ID) {
           onConnect(address);
-          return { status: "connected", address, chainId };
+          fetchBalance(address).then((balance) =>
+            setWallet({ status: "connected", address, chainId, balance })
+          );
+          return { status: "connected", address, chainId, balance: BigInt(0) };
         }
         return { status: "wrong_network", address };
       });
@@ -105,9 +136,16 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
       eth.removeListener("accountsChanged", handleAccountsChanged);
       eth.removeListener("chainChanged", handleChainChanged);
     };
-  }, [onConnect, onDisconnect]);
+  }, [onConnect, onDisconnect, updateBalance]);
 
-  // ── Actions ────────────────────────────────────────────────────────────────
+  // Poll balance every 15s when connected
+  useEffect(() => {
+    if (wallet.status !== "connected") return;
+    const id = setInterval(() => updateBalance(wallet.address), 15_000);
+    return () => clearInterval(id);
+  }, [wallet.status, wallet.status === "connected" ? (wallet as Extract<WalletState, {status:"connected"}>).address : "", updateBalance]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Actions
   const connect = useCallback(async () => {
     const eth = getEthereum();
     if (!eth) return;
@@ -118,7 +156,8 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
       const chainId = parseInt(chainIdHex, 16);
       const address = accounts[0];
       if (chainId === SEPOLIA_CHAIN_ID) {
-        setWallet({ status: "connected", address, chainId });
+        const balance = await fetchBalance(address);
+        setWallet({ status: "connected", address, chainId, balance });
         onConnect(address);
       } else {
         setWallet({ status: "wrong_network", address });
@@ -156,17 +195,26 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
     onDisconnect();
   }, [onDisconnect]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // Render
   if (wallet.status === "no_metamask") {
     return (
-      <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer"
-        className="btn-primary" style={{ textDecoration: "none" }}>
+      <a
+        href="https://metamask.io/download/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn-primary"
+        style={{ textDecoration: "none" }}
+      >
         Install MetaMask
       </a>
     );
   }
   if (wallet.status === "idle") {
-    return <button className="btn-primary" onClick={connect}>Connect Wallet</button>;
+    return (
+      <button className="btn-primary" onClick={connect} id="btn-connect-wallet">
+        Connect Wallet
+      </button>
+    );
   }
   if (wallet.status === "connecting") {
     return (
@@ -179,7 +227,9 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
         <span className="chip chip-error">Wrong network</span>
-        <button className="btn-primary" onClick={switchToSepolia}>Switch to Sepolia</button>
+        <button className="btn-primary" onClick={switchToSepolia}>
+          Switch to Sepolia
+        </button>
       </div>
     );
   }
@@ -190,15 +240,42 @@ export default function WalletConnect({ onConnect, onDisconnect }: Props) {
       </button>
     );
   }
-  // connected
+
+  // connected — show address + balance chip + disconnect
+  const connected = wallet as Extract<WalletState, { status: "connected" }>;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span className="chip chip-success">
-        <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%",
-          background: "#10b981", marginRight: 6 }} />
-        {shortenAddress(wallet.address)}
-      </span>
-      <button className="btn-secondary" onClick={disconnect}>Disconnect</button>
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+        <span className="chip chip-success" id="wallet-address-chip">
+          <span
+            style={{
+              display: "inline-block",
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: "#10b981",
+              marginRight: 6,
+              flexShrink: 0,
+            }}
+          />
+          {shortenAddress(connected.address)}
+        </span>
+        {connected.balance > BigInt(0) && (
+          <span
+            style={{
+              fontFamily: "var(--font-label)",
+              fontSize: 10,
+              letterSpacing: "0.06em",
+              color: "var(--color-primary-70)",
+            }}
+          >
+            {formatEth(connected.balance)}
+          </span>
+        )}
+      </div>
+      <button className="btn-secondary" onClick={disconnect} style={{ height: 36, padding: "0 16px", fontSize: 11 }}>
+        Disconnect
+      </button>
     </div>
   );
 }

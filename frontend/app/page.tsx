@@ -9,10 +9,12 @@ const WalletConnect = dynamic(() => import("../components/WalletConnect"), {
   ssr: false,
 });
 const TipForm = dynamic(() => import("../components/TipForm"), { ssr: false });
+const DeployBanner = dynamic(() => import("../components/DeployBanner"), { ssr: false });
 
 export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
+  const [deployedAddress, setDeployedAddress] = useState<string | null>(null);
 
   const handleConnect = useCallback((addr: string) => {
     setWalletAddress(addr);
@@ -23,8 +25,13 @@ export default function Home() {
   }, []);
 
   const handleTipConfirmed = useCallback(() => {
-    // Increment trigger so SupporterWall re-fetches events
     setRefreshCount((c) => c + 1);
+  }, []);
+
+  const handleDeployed = useCallback((addr: string) => {
+    setDeployedAddress(addr);
+    // Refresh after short delay so user can read the success UI
+    setTimeout(() => setRefreshCount((c) => c + 1), 2000);
   }, []);
 
   return (
@@ -114,6 +121,24 @@ export default function Home() {
 
         <hr className="divider" />
 
+        {/* Deploy banner — only shows when no contract is deployed */}
+        <DeployBanner walletAddress={walletAddress} onDeployed={handleDeployed} />
+
+        {/* Deployed address notification */}
+        {deployedAddress && (
+          <div
+            className="card"
+            style={{ borderColor: "#6ee7b7", background: "#f0fdf4", padding: "16px 20px" }}
+          >
+            <p className="body-sm" style={{ color: "#065f46", fontWeight: 600, marginBottom: 4 }}>
+              ✅ Contract deployed! Add this to your <code>frontend/.env.local</code>:
+            </p>
+            <code style={{ fontSize: 12, color: "#065f46", wordBreak: "break-all", display: "block" }}>
+              NEXT_PUBLIC_CONTRACT_ADDRESS={deployedAddress}
+            </code>
+          </div>
+        )}
+
         {/* Tip form section */}
         <section>
           <h2 className="headline-md" style={{ marginBottom: "var(--space-sm)" }}>
@@ -147,7 +172,7 @@ export default function Home() {
                   className="body-md"
                   style={{ color: "var(--color-primary-70)", marginBottom: 20 }}
                 >
-                  You'll need MetaMask and a little Sepolia ETH from a faucet.
+                  You&apos;ll need MetaMask and a little Sepolia ETH from a faucet.
                 </p>
                 <WalletConnect
                   onConnect={handleConnect}
@@ -215,10 +240,7 @@ export default function Home() {
                   {step.n}
                 </span>
                 <div>
-                  <p
-                    className="body-md"
-                    style={{ fontWeight: 600, marginBottom: 4 }}
-                  >
+                  <p className="body-md" style={{ fontWeight: 600, marginBottom: 4 }}>
                     {step.title}
                   </p>
                   <p className="body-sm" style={{ color: "var(--color-primary-70)" }}>
@@ -266,7 +288,7 @@ export default function Home() {
             Get test ETH ↗
           </a>
           <a
-            href="https://github.com"
+            href="https://github.com/h55n/tipjar-metamask-challenge"
             target="_blank"
             rel="noopener noreferrer"
             className="caption"
