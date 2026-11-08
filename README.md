@@ -127,3 +127,12 @@ The supporter wall never uses local React state as the primary source. On mount,
 | Transaction lifecycle | idle → pending (with Etherscan link) → confirmed / failed |
 | Supporter wall | `queryFilter` historical events + live `contract.on` listener |
 | Error handling | User rejection, wrong network, failed tx, MetaMask not installed |
+
+### Local contract regression tests
+
+At the repository root, run `npm ci` followed by `npm test`. This runs the
+TipJar suite on Hardhat's disposable in-process network explicitly, regardless
+of any configured public RPC. It does not use a wallet, deploy to Sepolia or
+spend real funds. No environment file or API key is needed. `npm run compile`
+compiles the contracts without deploying them. CI runs this same suite on
+Node 22 and 24; the frontend is a separate project under `frontend/`.
